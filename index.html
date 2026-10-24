@@ -1,459 +1,444 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Рыбалка у Лерика — Hardcore Edition 2.0</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        .game-container { position: relative; width: 100vw; height: 100vh; max-width: 500px; background-color: #111; background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 15px; transition: background-image 0.5s ease-in-out; }
-        
-        .start-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        .start-btn { padding: 20px 40px; font-size: 24px; font-weight: bold; color: #fff; background: linear-gradient(135deg, #d4af37, #856404); border: 3px solid #fff; border-radius: 15px; cursor: pointer; box-shadow: 0 0 20px rgba(212, 175, 55, 0.6); }
-        
-        .top-bar { width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: center; }
-        .stats-box { width: 100%; background: rgba(0, 0, 0, 0.8); border: 2px solid #ffd700; padding: 10px; border-radius: 10px; font-size: 15px; font-weight: bold; color: #ffd700; text-align: center; }
-        
-        .nav-buttons { display: flex; gap: 5px; width: 100%; justify-content: space-between; }
-        .nav-btn { background: rgba(0, 0, 0, 0.8); border: 2px solid #ffd700; color: #ffd700; padding: 8px 6px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; flex: 1; text-align: center; transition: 0.2s; }
-        .nav-btn:active { transform: scale(0.95); }
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+body { font-family: Arial, sans-serif; background-color: #111; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+.game-container { position: relative; width: 100vw; height: 100vh; max-width: 500px; background-color: #111; background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 15px; transition: background-image 0.5s ease-in-out; }
+.start-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+.start-btn { padding: 20px 40px; font-size: 24px; font-weight: bold; color: #fff; background: linear-gradient(135deg, #d4af37, #856404); border: 3px solid #fff; border-radius: 15px; cursor: pointer; box-shadow: 0 0 20px rgba(212, 175, 55, 0.6); }
+.top-bar { width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.stats-box { width: 100%; background: rgba(0, 0, 0, 0.8); border: 2px solid #ffd700; padding: 10px; border-radius: 10px; font-size: 15px; font-weight: bold; color: #ffd700; text-align: center; }
+.nav-buttons { display: flex; gap: 5px; width: 100%; justify-content: space-between; }
+.nav-btn { background: rgba(0, 0, 0, 0.8); border: 2px solid #ffd700; color: #ffd700; padding: 8px 6px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; flex: 1; text-align: center; transition: 0.2s; }
+.nav-btn:active { transform: scale(0.95); }
+.action-box { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 20px; min-height: 150px; justify-content: flex-end; }
+.btn { width: 100%; padding: 18px; font-size: 22px; font-weight: bold; color: #fff; background: linear-gradient(135deg, #2e7d32, #1b5e20); border: 3px solid #ffd700; border-radius: 12px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); text-align: center; }
+.btn:disabled { background: #555 !important; border-color: #888 !important; cursor: not-allowed; color: #999; }
 
-        .action-box { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 20px; min-height: 150px; justify-content: flex-end;}
-        .btn { width: 100%; padding: 18px; font-size: 22px; font-weight: bold; color: #fff; background: linear-gradient(135deg, #2e7d32, #1b5e20); border: 3px solid #ffd700; border-radius: 12px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); text-align: center; }
-        .btn:disabled { background: #555 !important; border-color: #888 !important; cursor: not-allowed; color: #999; }
-        
-        /* Мини-игра рыбалки */
-        .minigame-container { display: none; width: 100%; flex-direction: column; align-items: center; background: rgba(0,0,0,0.85); padding: 15px; border-radius: 15px; border: 2px solid #fff; }
-        .bobber-img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #ffd700; margin-bottom: 10px; background: #333; }
-        .status-text { font-size: 22px; font-weight: bold; height: 30px; margin-bottom: 10px; text-shadow: 2px 2px 4px #000; text-transform: uppercase; }
-        .color-scale { width: 100%; height: 25px; border-radius: 12px; border: 2px solid #fff; margin-bottom: 15px; transition: background-color 0.1s; }
-        .btn-pull { background: linear-gradient(135deg, #1976d2, #0d47a1); }
+/* Мини-игра рыбалки */
+.minigame-container { display: none; width: 100%; flex-direction: column; align-items: center; background: rgba(0, 0, 0, 0.85); padding: 15px; border-radius: 15px; border: 2px solid #fff; }
+.bobber-img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #ffd700; margin-bottom: 10px; background: #333; }
+.status-text { font-size: 22px; font-weight: bold; height: 30px; margin-bottom: 10px; text-shadow: 2px 2px 4px #000; text-transform: uppercase; }
+.color-scale { width: 100%; height: 25px; border-radius: 12px; border: 2px solid #fff; margin-bottom: 15px; transition: background-color 0.1s; }
+.btn-pull { background: linear-gradient(135deg, #1976d2, #0d47a1); }
 
-        /* Модальные окна */
-        .modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 20, 0.98); border: 3px solid #ffd700; border-radius: 15px; padding: 20px; text-align: center; width: 90%; max-width: 360px; max-height: 85vh; overflow-y: auto; box-shadow: 0 0 30px rgba(0,0,0,0.9); z-index: 10; }
-        .modal h2 { color: #ffd700; margin-bottom: 10px; }
-        .fail-modal { border-color: #ff4444; } .fail-modal h2 { color: #ff4444; }
-        .fish-photo { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #fff; margin: 10px 0; background: #444; }
-        
-        .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
-        .btn-take { background: linear-gradient(135deg, #2e7d32, #1b5e20); font-size: 14px; padding: 10px; flex: 1; }
-        .btn-release { background: linear-gradient(135deg, #d32f2f, #b71c1c); font-size: 14px; padding: 10px; flex: 1; }
-        .btn-retry, .btn-close { background: linear-gradient(135deg, #757575, #424242); font-size: 14px; padding: 10px 20px; margin-top: 10px; }
-        
-        .list-box { text-align: left; margin: 10px 0; font-size: 14px; max-height: 250px; overflow-y: auto; }
-        .list-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #444; }
-        
-        .shop-item { border: 1px solid #555; border-radius: 8px; padding: 10px; margin: 8px 0; background: rgba(255, 255, 255, 0.05); display: flex; flex-direction: column; gap: 6px; text-align: left; }
-        .shop-item span { font-size: 13px; color: #ccc; }
-        .buy-btn { background: linear-gradient(135deg, #2e7d32, #1b5e20); color: #fff; border: 1px solid #ffd700; border-radius: 6px; padding: 8px; cursor: pointer; font-weight: bold; }
-    </style>
-</head>
-<body>
-
+/* Модальные окна */
+.modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 20, 0.98); border: 3px solid #ffd700; border-radius: 15px; padding: 20px; text-align: center; width: 90%; max-width: 360px; max-height: 85vh; overflow-y: auto; box-shadow: 0 0 30px rgba(0,0,0,0.9); z-index: 10; }
+.modal h2 { color: #ffd700; margin-bottom: 10px; }
+.fail-modal { border-color: #ff4444; } .fail-modal h2 { color: #ff4444; }
+.fish-photo { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #fff; margin: 10px 0; background: #444; }
+.modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+.btn-take { background: linear-gradient(135deg, #2e7d32, #1b5e20); font-size: 14px; padding: 10px; flex: 1; }
+.btn-release { background: linear-gradient(135deg, #d32f2f, #b71c1c); font-size: 14px; padding: 10px; flex: 1; }
+.btn-retry, .btn-close { background: linear-gradient(135deg, #757575, #424242); font-size: 14px; padding: 10px 20px; margin-top: 10px; }
+.list-box { text-align: left; margin: 10px 0; font-size: 14px; max-height: 250px; overflow-y: auto; }
+.list-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #444; }
+.shop-item { border: 1px solid #555; border-radius: 8px; padding: 10px; margin: 8px 0; background: rgba(255, 255, 255, 0.05); display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.shop-item span { font-size: 13px; color: #ccc; }
+.buy-btn { background: linear-gradient(135deg, #2e7d32, #1b5e20); color: #fff; border: 1px solid #ffd700; border-radius: 6px; padding: 8px; cursor: pointer; font-weight: bold; }
 <div class="game-container" id="gameContainer">
-    <div class="start-overlay" id="startOverlay">
-        <button class="start-btn" id="startBtn">НАЧАТЬ РЫБАЛКУ</button>
-    </div>
+  <div class="start-overlay" id="startOverlay">
+    <button class="start-btn" id="startBtn">НАЧАТЬ РЫБАЛКУ</button>
+  </div>
 
-    <div class="top-bar">
-        <div class="stats-box">
-            Уровень: <span id="lvlText">1</span> | XP: <span id="xpText">0</span>/<span id="maxXpText">100</span><br>
-            Монеты: <span id="coinsCount">0</span> 💰
-        </div>
-        <div class="nav-buttons">
-            <button class="nav-btn" id="openBagBtn">🎒 САДОК (<span id="bagCount">0</span>)</button>
-            <button class="nav-btn" id="openTrophyBtn">🏆 ТРОФЕИ</button>
-            <button class="nav-btn" id="openLocBtn">🗺️ ЛОКАЦИИ</button>
-            <button class="nav-btn" id="openShopBtn">🏪 МАГАЗИН</button>
-        </div>
+  <div class="top-bar">
+    <div class="stats-box">
+      Уровень: <span id="lvlText">1</span> | XP: <span id="xpText">0</span>/<span id="maxXpText">100</span><br>
+      Монеты: <span id="coinsCount">0</span> 💰
     </div>
+    <div class="nav-buttons">
+      <button class="nav-btn" id="openBagBtn">🎒 САДОК (<span id="bagCount">0</span>)</button>
+      <button class="nav-btn" id="openTrophyBtn">🏆 ТРОФЕИ</button>
+      <button class="nav-btn" id="openLocBtn">🗺️ ЛОКАЦИИ</button>
+      <button class="nav-btn" id="openShopBtn">🏪 МАГАЗИН</button>
+    </div>
+  </div>
 
-    <div class="action-box">
-        <button class="btn" id="fishBtn">🎣 РЫБАЧИТЬ</button>
-        
-        <!-- Мини-игра -->
-        <div class="minigame-container" id="minigameBox">
-            <img src="img/bobber.jpg" id="bobberImg" class="bobber-img" alt="Поплавок">
-            <div class="status-text" id="fishingStatus">ОЖИДАНИЕ...</div>
-            <div class="color-scale" id="colorScale" style="background-color: #d32f2f;"></div>
-            <button class="btn btn-pull" id="pullBtn">ВЫТАЩИТЬ РЫБУ</button>
-        </div>
-    </div>
+  <div class="action-box">
+    <button class="btn" id="fishBtn">🎣 РЫБАЧИТЬ</button>
 
-    <!-- Улов -->
-    <div class="modal" id="catchModal">
-        <h2 id="fishName">Рыба</h2>
-        <p id="fishWeightText" style="color: #4caf50; font-weight: bold;"></p>
-        <p id="fishPriceText" style="color: #ffd700; font-weight: bold;"></p>
-        <img src="" id="fishImage" class="fish-photo" alt="Рыба">
-        <div class="modal-btns">
-            <button class="btn btn-take" id="takeBtn">В садок</button>
-            <button class="btn btn-release" id="releaseBtn">Отпустить</button>
-        </div>
+    <!-- Мини-игра -->
+    <div class="minigame-container" id="minigameBox">
+      <img src="bobber.jpg" id="bobberImg" class="bobber-img" alt="Поплавок">
+      <div class="status-text" id="fishingStatus">ОЖИДАНИЕ...</div>
+      <div class="color-scale" id="colorScale" style="background-color: #d32f2f;"></div>
+      <button class="btn btn-pull" id="pullBtn">ВЫТАЩИТЬ РЫБУ</button>
     </div>
+  </div>
 
-    <!-- Сход / Ошибка -->
-    <div class="modal fail-modal" id="failModal">
-        <h2 id="failTitle">СОРВАЛАСЬ!</h2>
-        <p id="failDesc" style="margin: 10px 0;">Рыба ушла.</p>
-        <button class="btn btn-retry" id="retryBtn">Ок</button>
+  <!-- Улов -->
+  <div class="modal" id="catchModal">
+    <h2 id="fishName">Рыба</h2>
+    <p id="fishWeightText" style="color: #4caf50; font-weight: bold;"></p>
+    <p id="fishPriceText" style="color: #ffd700; font-weight: bold;"></p>
+    <img src="" id="fishImage" class="fish-photo" alt="Рыба">
+    <div class="modal-btns">
+      <button class="btn btn-take" id="takeBtn">В садок</button>
+      <button class="btn btn-release" id="releaseBtn">Отпустить</button>
     </div>
+  </div>
 
-    <!-- Садок -->
-    <div class="modal" id="bagModal">
-        <h2>Садок</h2>
-        <div class="list-box" id="bagList"></div>
-        <button class="btn buy-btn" id="sellAllBtn" style="margin-top: 10px; width: 100%;">Продать всё</button>
-        <button class="btn btn-close" id="closeBagBtn" style="width: 100%;">Закрыть</button>
-    </div>
+  <!-- Сход / Ошибка -->
+  <div class="modal fail-modal" id="failModal">
+    <h2 id="failTitle">СОРВАЛАСЬ!</h2>
+    <p id="failDesc" style="margin: 10px 0;">Рыба ушла...</p>
+    <button class="btn btn-retry" id="retryBtn">ОК</button>
+  </div>
 
-    <!-- Трофеи -->
-    <div class="modal" id="trophyModal">
-        <h2>Трофеи</h2>
-        <div class="list-box" id="trophyList"></div>
-        <button class="btn btn-close" id="closeTrophyBtn" style="width: 100%;">Закрыть</button>
-    </div>
+  <!-- Садок -->
+  <div class="modal" id="bagModal">
+    <h2>Садок</h2>
+    <div class="list-box" id="bagList"></div>
+    <button class="btn buy-btn" id="sellAllBtn" style="margin-top: 10px; width: 100%;">Продать всё</button>
+    <button class="btn btn-close" id="closeBagBtn" style="width: 100%;">Закрыть</button>
+  </div>
 
-    <!-- Локации -->
-    <div class="modal" id="locModal">
-        <h2>Водоёмы</h2>
-        <div id="locContainer"></div>
-        <button class="btn btn-close" id="closeLocBtn" style="width: 100%; margin-top: 10px;">Закрыть</button>
-    </div>
+  <!-- Трофеи -->
+  <div class="modal" id="trophyModal">
+    <h2>Трофеи</h2>
+    <div class="list-box" id="trophyList"></div>
+    <button class="btn btn-close" id="closeTrophyBtn" style="width: 100%;">Закрыть</button>
+  </div>
 
-    <!-- Магазин -->
-    <div class="modal" id="shopModal">
-        <h2>Магазин</h2>
-        <div class="list-box" style="max-height: 50vh;">
-            <h3 style="color:#ffd700; margin-top:5px;">Удочки (Ожидание / Зеленая зона)</h3>
-            <div id="rodsContainer"></div>
-            <h3 style="color:#ffd700; margin-top:15px;">Наживки (Шанс не порвать леску)</h3>
-            <div id="baitsContainer"></div>
-        </div>
-        <button class="btn btn-close" id="closeShopBtn" style="width: 100%; margin-top: 10px;">Закрыть</button>
+  <!-- Локации -->
+  <div class="modal" id="locModal">
+    <h2>Локации</h2>
+    <div id="locContainer"></div>
+    <button class="btn btn-close" id="closeLocBtn" style="width: 100%; margin-top: 10px;">Закрыть</button>
+  </div>
+
+  <!-- Магазин -->
+  <div class="modal" id="shopModal">
+    <h2>Магазин</h2>
+    <div class="list-box" style="max-height: 50vh;">
+      <h3 style="color: #ffd700; margin-top: 5px;">Удочки (Ожидание / Зеленая зона)</h3>
+      <div id="rodsContainer"></div>
+      <h3 style="color: #ffd700; margin-top: 15px;">Наживки (Шанс не порвать леску)</h3>
+      <div id="baitsContainer"></div>
     </div>
+    <button class="btn btn-close" id="closeShopBtn" style="width: 100%; margin-top: 10px;">Закрыть</button>
+  </div>
 </div>
 
-<audio id="natureSound" loop></audio><script>
-    // БАЗЫ ДАННЫХ
-    const locations = [
-        { name: 'Тихий Пруд', bg: 'img/fish-bg.jpg', audio: 'audio/lake-nature.mp3', reqLvl: 1, cost: 0 },
-        { name: 'Быстрая Река', bg: 'img/river-bg.jpg', audio: 'audio/river-nature.mp3', reqLvl: 3, cost: 500 },
-        { name: 'Море', bg: 'img/sea-bg.jpg', audio: 'audio/sea-nature.mp3', reqLvl: 7, cost: 5000 }
-    ];
+<audio id="natureSound" loop></audio>
+        // БАЗА ДАННЫХ
+const locations = [
+  { name: 'Тихий Пруд', bg: 'fish-bg.jpg', audio: 'lake-nature.mp3', reqLvl: 1, cost: 0 },
+  { name: 'Быстрая Река', bg: 'river-bg.jpg', audio: 'river-nature.mp3', reqLvl: 3, cost: 500 },
+  { name: 'Море', bg: 'sea-bg.jpg', audio: 'sea-nature.mp3', reqLvl: 7, cost: 5000 }
+];
 
-    const rods = [
-        { name: 'Старая удочка', maxWait: 30000, greenTime: 800, cost: 0 },
-        { name: 'Продвинутая удочка', maxWait: 22000, greenTime: 1000, cost: 500 },
-        { name: 'Профессиональная удочка', maxWait: 15000, greenTime: 1200, cost: 700 },
-        { name: 'Карбоновая удочка', maxWait: 10000, greenTime: 1500, cost: 3000 },
-        { name: 'Элитная снасть', maxWait: 5000, greenTime: 2000, cost: 6000 }
-    ];
+const rods = [
+  { name: 'Старая удочка', maxWait: 30000, greenTime: 800, cost: 0 },
+  { name: 'Продвинутая удочка', maxWait: 22000, greenTime: 1000, cost: 500 },
+  { name: 'Профессиональная удочка', maxWait: 15000, greenTime: 1200, cost: 1500 },
+  { name: 'Карбоновая удочка', maxWait: 10000, greenTime: 1500, cost: 3500 },
+  { name: 'Элитная снасть', maxWait: 5000, greenTime: 2000, cost: 8000 }
+];
 
-    const baits = [
-        { name: 'Хлеб', bonusLuck: 0.0, cost: 0, desc: 'Базовый шанс (60%)' },
-        { name: 'Навозный червь', bonusLuck: 0.1, cost: 300, desc: '+10% к удаче' },
-        { name: 'Опарыш', bonusLuck: 0.25, cost: 1500, desc: '+25% к удаче' },
-        { name: 'Золотой червь', bonusLuck: 0.7, cost: 6000, desc: '+70% к удаче (Без обрывов!)' }
-    ];
+const baits = [
+  { name: 'Хлеб', bonusLuck: 0.0, cost: 0, desc: 'Базовый шанс (60%)' },
+  { name: 'Навозный червь', bonusLuck: 0.1, cost: 300, desc: '+10% к удаче' },
+  { name: 'Опарыш', bonusLuck: 0.25, cost: 1500, desc: '+25% к удаче' },
+  { name: 'Золотой червь', bonusLuck: 0.7, cost: 8000, desc: '+70% к удаче (без обрывов!)' }
+];
 
-    const fishList = [
-        // Пруд (loc: 0)
-        { name: 'Уклейка', img: 'img/ukleika.jpg', weight: 22, price: 20, minW: 0.05, maxW: 0.15, xp: 15, loc: 0 },
-        { name: 'Карась', img: 'img/karas.jpg', weight: 18, price: 35, minW: 0.2, maxW: 1.2, xp: 25, loc: 0 },
-        { name: 'Щука', img: 'img/schuka.jpg', weight: 5, price: 200, minW: 1.0, maxW: 8.0, xp: 100, loc: 0 },
-        { name: 'Сом', img: 'img/som.jpg', weight: 1.5, price: 800, minW: 5.0, maxW: 35.0, xp: 350, loc: 0 },
-        // Река (loc: 1)
-        { name: 'Пескарь', img: 'img/peskar.jpg', weight: 25, price: 50, minW: 0.03, maxW: 0.15, xp: 30, loc: 1 },
-        { name: 'Хариус', img: 'img/harius.jpg', weight: 13, price: 180, minW: 0.3, maxW: 1.5, xp: 90, loc: 1 },
-        { name: 'Налим', img: 'img/nalim.jpg', weight: 8, price: 450, minW: 0.8, maxW: 6.0, xp: 200, loc: 1 },
-        { name: 'Таймень', img: 'img/taimen.jpg', weight: 3, price: 1500, minW: 5.0, maxW: 30.0, xp: 700, loc: 1 },
-        // Море (loc: 2)
-        { name: 'Бычок', img: 'img/bychok.jpg', weight: 25, price: 150, minW: 0.1, maxW: 0.4, xp: 80, loc: 2 },
-        { name: 'Скумбрия', img: 'img/skumbria.jpg', weight: 18, price: 300, minW: 0.3, maxW: 1.2, xp: 150, loc: 2 },
-        { name: 'Лосось', img: 'img/losos.jpg', weight: 12, price: 800, minW: 2.0, maxW: 8.0, xp: 400, loc: 2 },
-        { name: 'Тунец', img: 'img/tunec.jpg', weight: 6, price: 2500, minW: 15.0, maxW: 80.0, xp: 1000, loc: 2 },
-        { name: 'Акула', img: 'img/akula.jpg', weight: 2, price: 8000, minW: 50.0, maxW: 300.0, xp: 3000, loc: 2 }
-    ];
+const fishList = [
+  // Пруд (loc: 0)
+  { name: 'Уклеика', img: 'ukleika.jpg', weight: 22, price: 20, minW: 0.05, maxW: 0.15, xp: 15, loc: 0 },
+  { name: 'Карась', img: 'karas.jpg', weight: 18, price: 35, minW: 0.2, maxW: 1.2, xp: 25, loc: 0 },
+  { name: 'Щука', img: 'schuka.jpg', weight: 5, price: 200, minW: 1.0, maxW: 8.0, xp: 100, loc: 0 },
+  { name: 'Сом', img: 'som.jpg', weight: 1.5, price: 800, minW: 5.0, maxW: 35.0, xp: 350, loc: 0 },
 
-    // ПЕРЕМЕННЫЕ ИГРОКА
-    let coins = 0, level = 1, xp = 0, maxXp = 100;
-    let bag = [], trophies = {}, currentLoc = 0, unlockedLocs = [0];
-    let rodLevel = 0, baitLevel = 0;
-    let currentFish = null, currentWeight = 0;
+  // Река (loc: 1)
+  { name: 'Пескарь', img: 'peskar.jpg', weight: 25, price: 50, minW: 0.03, maxW: 0.12, xp: 30, loc: 1 },
+  { name: 'Хариус', img: 'harius.jpg', weight: 15, price: 180, minW: 0.3, maxW: 1.5, xp: 90, loc: 1 },
+  { name: 'Налим', img: 'nalim.jpg', weight: 8, price: 450, minW: 0.8, maxW: 6.0, xp: 200, loc: 1 },
+  { name: 'Таймень', img: 'taimen.jpg', weight: 3, price: 1300, minW: 3.0, maxW: 20.0, xp: 700, loc: 1 },
 
-    // ПЕРЕМЕННЫЕ МИНИ-ИГРЫ
-    let biteTimeout, greenTimeout;
-    let fishingState = 'IDLE'; // IDLE, RED, YELLOW, GREEN
+  // Море (loc: 2)
+  { name: 'Бычок', img: 'bychok.jpg', weight: 25, price: 150, minW: 0.1, maxW: 0.4, xp: 80, loc: 2 },
+  { name: 'Скумбрия', img: 'skumbria.jpg', weight: 18, price: 300, minW: 0.3, maxW: 1.2, xp: 150, loc: 2 },
+  { name: 'Лосось', img: 'losos.jpg', weight: 12, price: 800, minW: 2.0, maxW: 8.0, xp: 400, loc: 2 },
+  { name: 'Тунец', img: 'tunec.jpg', weight: 6, price: 2500, minW: 15.0, maxW: 80.0, xp: 1000, loc: 2 },
+  { name: 'Акула', img: 'akula.jpg', weight: 2, price: 8000, minW: 50.0, maxW: 300.0, xp: 3000, loc: 2 }
+];
 
-    function saveGame() {
-        localStorage.setItem('lerik_fish_save2', JSON.stringify({ 
-            coins, level, xp, maxXp, bag, trophies, currentLoc, unlockedLocs, rodLevel, baitLevel 
-        }));
-    }
+// ПЕРЕМЕННЫЕ ИГРОКА
+let coins = 0, level = 1, xp = 0, maxXp = 100;
+let bag = [], trophies = {}, currentLoc = 0, unlockedLocs = [0];
+let rodLevel = 0, baitLevel = 0;
+let currentFish = null, currentWeight = 0;
 
-    function loadGame() {
-        const data = JSON.parse(localStorage.getItem('lerik_fish_save2'));
-        if (data) {
-            coins = data.coins || 0; level = data.level || 1; xp = data.xp || 0; maxXp = data.maxXp || 100;
-            bag = data.bag || []; trophies = data.trophies || {};
-            currentLoc = data.currentLoc || 0; unlockedLocs = data.unlockedLocs || [0];
-            rodLevel = data.rodLevel || 0; baitLevel = data.baitLevel || 0;
-        }
-        updateUI();
-    }
+// ПЕРЕМЕННЫЕ МИНИ-ИГРЫ
+let biteTimeout, greenTimeout;
+let fishingState = 'IDLE';
 
-    function updateUI() {
-        document.getElementById('coinsCount').innerText = coins;
-        document.getElementById('lvlText').innerText = level;
-        document.getElementById('xpText').innerText = xp;
-        document.getElementById('maxXpText').innerText = maxXp;
-        document.getElementById('bagCount').innerText = bag.length;
-        document.getElementById('gameContainer').style.backgroundImage = `url('${locations[currentLoc].bg}')`;
+function saveGame() {
+  localStorage.setItem('lerik_fish_save2', JSON.stringify({
+    coins, level, xp, maxXp, bag, trophies, currentLoc, unlockedLocs, rodLevel, baitLevel
+  }));
+}
 
-        const audio = document.getElementById('natureSound');
-        if (!audio.src.includes(locations[currentLoc].audio)) {
-            audio.src = locations[currentLoc].audio;
-            audio.play().catch(() => {});
-        }
-        renderShop();
-        renderLocations();
-    }
+function loadGame() {
+  const data = JSON.parse(localStorage.getItem('lerik_fish_save2'));
+  if (data) {
+    coins = data.coins || 0; level = data.level || 1; xp = data.xp || 0; maxXp = data.maxXp || 100;
+    bag = data.bag || []; trophies = data.trophies || {};
+    currentLoc = data.currentLoc || 0; unlockedLocs = data.unlockedLocs || [0];
+    rodLevel = data.rodLevel || 0; baitLevel = data.baitLevel || 0;
+  }
+  updateUI();
+}
 
-    function addXP(amount) {
-        xp += amount;
-        if (xp >= maxXp) {
-            xp -= maxXp;
-            level++;
-            maxXp = Math.floor(maxXp * 1.5);
-            alert(`🎉 ПОЗДРАВЛЯЕМ! Вы достигли ${level} уровня!`);
-        }
-        updateUI(); saveGame();
-    }
+function updateUI() {
+  document.getElementById('coinsCount').innerText = coins;
+  document.getElementById('lvlText').innerText = level;
+  document.getElementById('xpText').innerText = xp;
+  document.getElementById('maxXpText').innerText = maxXp;
+  document.getElementById('bagCount').innerText = bag.length;
+  document.getElementById('gameContainer').style.backgroundImage = `url('${locations[currentLoc].bg}')`;
 
-    // --- МИНИ ИГРА ---
-    document.getElementById('fishBtn').addEventListener('click', () => {
-        document.getElementById('fishBtn').style.display = 'none';
-        const mg = document.getElementById('minigameBox');
-        mg.style.display = 'flex';
-        
-        fishingState = 'RED';
-        document.getElementById('colorScale').style.backgroundColor = '#d32f2f'; // Red
-        document.getElementById('fishingStatus').innerText = 'ОЖИДАНИЕ...';
-        document.getElementById('fishingStatus').style.color = '#fff';
+  const audio = document.getElementById('natureSound');
+  if (audio.getAttribute('src') !== locations[currentLoc].audio) {
+    audio.src = locations[currentLoc].audio;
+  }
 
-        const myRod = rods[rodLevel];
-        // Время ожидания от 2 сек до maxWait удочки
-        const waitTime = Math.random() * (myRod.maxWait - 2000) + 2000;
+  renderShop();
+  renderLocations();
+}
 
-        biteTimeout = setTimeout(() => {
-            fishingState = 'YELLOW';
-            document.getElementById('colorScale').style.backgroundColor = '#fbc02d'; // Yellow
-            document.getElementById('fishingStatus').innerText = 'КЛЮЕТ!!!';
-            document.getElementById('fishingStatus').style.color = '#fbc02d';
+function addXP(amount) {
+  xp += amount;
+  if (xp >= maxXp) {
+    xp -= maxXp;
+    level++;
+    maxXp = Math.floor(maxXp * 1.5);
+    alert(`🎉 ПОЗДРАВЛЯЕМ! Вы достигли ${level} уровня!`);
+  }
+  updateUI(); saveGame();
+}
 
-            // Желтая фаза длится 1-2 секунды
-            setTimeout(() => {
-                if(fishingState !== 'YELLOW') return; // Если уже вытащил раньше
-                fishingState = 'GREEN';
-                document.getElementById('colorScale').style.backgroundColor = '#388e3c'; // Green
-                document.getElementById('fishingStatus').innerText = 'ТЯНИ!!!';
-                document.getElementById('fishingStatus').style.color = '#388e3c';
+// МИНИ-ИГРА
+document.getElementById('fishBtn').addEventListener('click', () => {
+  document.getElementById('fishBtn').style.display = 'none';
+  const mg = document.getElementById('minigameBox');
+  mg.style.display = 'flex';
 
-                // Зеленая фаза (зависит от удочки)
-                greenTimeout = setTimeout(() => {
-                    if(fishingState === 'GREEN') {
-                        endMinigame("СОРВАЛАСЬ!", "Рыба уплыла, вы не успели подсечь.");
-                    }
-                }, myRod.greenTime);
+  fishingState = 'RED';
+  document.getElementById('colorScale').style.backgroundColor = '#d32f2f';
+  document.getElementById('fishingStatus').innerText = 'ОЖИДАНИЕ...';
+  document.getElementById('fishingStatus').style.color = '#fff';
 
-            }, 1000 + Math.random() * 1000);
+  const myRod = rods[rodLevel];
+  const waitTime = Math.random() * (myRod.maxWait - 2000) + 2000;
 
-        }, waitTime);
-    });
+  biteTimeout = setTimeout(() => {
+    fishingState = 'YELLOW';
+    document.getElementById('colorScale').style.backgroundColor = '#fbc02d';
+    document.getElementById('fishingStatus').innerText = 'ОЖИДАНИЕ...';
+    document.getElementById('fishingStatus').style.color = '#fbc02d';
 
-    document.getElementById('pullBtn').addEventListener('click', () => {
-        clearTimeout(biteTimeout);
-        clearTimeout(greenTimeout);
-        
+    greenTimeout = setTimeout(() => {
+      if (fishingState !== 'YELLOW') return;
+      fishingState = 'GREEN';
+      document.getElementById('colorScale').style.backgroundColor = '#388e3c';
+      document.getElementById('fishingStatus').innerText = 'КЛЮЕТ!';
+      document.getElementById('fishingStatus').style.color = '#388e3c';
+
+      greenTimeout = setTimeout(() => {
         if (fishingState === 'GREEN') {
-            // Шанс порвать леску. Базово 60% успеха (0.6).
-            const catchChance = 0.60 + baits[baitLevel].bonusLuck;
-            if (Math.random() <= catchChance) {
-                endMinigameSuccess();
-            } else {
-                endMinigame("ОБРЫВ ЛЕСКИ!", "Рыба оказалась слишком сильной и порвала леску. Купите наживку лучше!");
-            }
-        } else if (fishingState === 'YELLOW') {
-            endMinigame("РАНО!", "Вы поспешили и выдернули наживку прямо изо рта рыбы.");
-        } else {
-            endMinigame("ПУСТО!", "Вы вытащили пустой крючок.");
+          endMinigame('СОРВАЛАСЬ!', 'Рыба уплыла, вы не успели подсечь.');
         }
-    });
+      }, myRod.greenTime);
 
-    function endMinigame(title, desc) {
-        document.getElementById('minigameBox').style.display = 'none';
-        document.getElementById('fishBtn').style.display = 'block';
-        fishingState = 'IDLE';
-        
-        document.getElementById('failTitle').innerText = title;
-        document.getElementById('failDesc').innerText = desc;
-        document.getElementById('failModal').style.display = 'block';
+    }, 1000 + Math.random() * 1000);
+
+  }, waitTime);
+});
+
+document.getElementById('pullBtn').addEventListener('click', () => {
+  clearTimeout(biteTimeout);
+  clearTimeout(greenTimeout);
+
+  if (fishingState === 'GREEN') {
+    const catchChance = 0.60 + baits[baitLevel].bonusLuck;
+    if (Math.random() <= catchChance) {
+      endMinigameSuccess();
+    } else {
+      endMinigame('ОБРЫВ ЛЕСКИ!', 'Рыба оказалась слишком сильной и порвала леску. Купите наживку лучше!');
     }
+  } else if (fishingState === 'YELLOW') {
+    endMinigame('РАНО!', 'Вы поспешили и выдернули наживку прямо изо рта рыбы.');
+  } else {
+    endMinigame('ПУСТО!', 'Вы вытащили пустой крючок.');
+  }
+});
 
-    function endMinigameSuccess() {
-        document.getElementById('minigameBox').style.display = 'none';
-        document.getElementById('fishBtn').style.display = 'block';
-        fishingState = 'IDLE';
+function endMinigame(title, desc) {
+  document.getElementById('minigameBox').style.display = 'none';
+  document.getElementById('fishBtn').style.display = 'block';
+  fishingState = 'IDLE';
 
-        const activeFish = fishList.filter(f => f.loc === currentLoc);
-        const totalW = activeFish.reduce((s, f) => s + f.weight, 0);
-        let rnd = Math.random() * totalW;
-        for (let f of activeFish) {
-            if (rnd < f.weight) { currentFish = f; break; }
-            rnd -= f.weight;
-        }
-        if(!currentFish) currentFish = activeFish[0];
+  document.getElementById('failTitle').innerText = title;
+  document.getElementById('failDesc').innerText = desc;
+  document.getElementById('failModal').style.display = 'block';
+}
 
-        currentWeight = (Math.random() * (currentFish.maxW - currentFish.minW) + currentFish.minW).toFixed(2);
-        
-        document.getElementById('fishName').innerText = currentFish.name;
-        document.getElementById('fishWeightText').innerText = `Вес: ${currentWeight} кг`;
-        document.getElementById('fishPriceText').innerText = `Ценность: ${currentFish.price} 💰`;
-        document.getElementById('fishImage').src = currentFish.img;
-        document.getElementById('catchModal').style.display = 'block';
-    }
+function endMinigameSuccess() {
+  document.getElementById('minigameBox').style.display = 'none';
+  document.getElementById('fishBtn').style.display = 'block';
+  fishingState = 'IDLE';
 
-    // --- МОДАЛКИ УЛОВА ---
-    document.getElementById('takeBtn').addEventListener('click', () => {
-        bag.push({ ...currentFish, caughtWeight: currentWeight });
-        if (!trophies[currentFish.name] || currentWeight > trophies[currentFish.name]) {
-            trophies[currentFish.name] = currentWeight;
-        }
-        addXP(currentFish.xp);
-        document.getElementById('catchModal').style.display = 'none';
-        saveGame(); updateUI();
-    });
-    document.getElementById('releaseBtn').addEventListener('click', () => { 
-        addXP(Math.floor(currentFish.xp / 2)); 
-        document.getElementById('catchModal').style.display = 'none'; 
-        saveGame(); updateUI();
-    });
-    document.getElementById('retryBtn').addEventListener('click', () => {
-        document.getElementById('failModal').style.display = 'none';
-    });
+  const activeFish = fishList.filter(f => f.loc === currentLoc);
+  const totalW = activeFish.reduce((s, f) => s + f.weight, 0);
+  let rnd = Math.random() * totalW;
+  for (let f of activeFish) {
+    if (rnd < f.weight) { currentFish = f; break; }
+    rnd -= f.weight;
+  }
+  if (!currentFish) currentFish = activeFish[0];
 
-    // --- ИНТЕРФЕЙС КНОПОК МЕНЮ ---
-    document.getElementById('startBtn').addEventListener('click', () => {
-        document.getElementById('startOverlay').style.display = 'none';
-        loadGame();
-    });
+  currentWeight = (Math.random() * (currentFish.maxW - currentFish.minW) + currentFish.minW).toFixed(2);
 
-    document.getElementById('openBagBtn').addEventListener('click', () => {
-        const list = document.getElementById('bagList');
-        list.innerHTML = bag.length ? '' : 'Садок пуст';
-        bag.forEach(f => {
-            list.innerHTML += `<div class="list-item"><span>${f.name} (${f.caughtWeight} кг)</span><span style="color:#ffd700">${f.price} 💰</span></div>`;
-        });
-        document.getElementById('bagModal').style.display = 'block';
-    });
-    document.getElementById('closeBagBtn').addEventListener('click', () => document.getElementById('bagModal').style.display = 'none');
-    document.getElementById('sellAllBtn').addEventListener('click', () => {
-        if (!bag.length) return;
-        const total = bag.reduce((sum, f) => sum + f.price, 0);
-        coins += total; bag = [];
-        updateUI(); saveGame(); document.getElementById('bagModal').style.display = 'none';
-    });
+  document.getElementById('fishName').innerText = currentFish.name;
+  document.getElementById('fishWeightText').innerText = `Вес: ${currentWeight} кг`;
+  document.getElementById('fishPriceText').innerText = `Ценность: ${currentFish.price} 💰`;
+  document.getElementById('fishImage').src = currentFish.img;
+  document.getElementById('catchModal').style.display = 'block';
+}
 
-    document.getElementById('openTrophyBtn').addEventListener('click', () => {
-        const list = document.getElementById('trophyList');
-        list.innerHTML = '';
-        Object.keys(trophies).forEach(name => {
-            list.innerHTML += `<div class="list-item"><span>${name}</span><span style="color:#4caf50">${trophies[name]} кг</span></div>`;
-        });
-        if(!list.innerHTML) list.innerHTML = 'Нет трофеев';
-        document.getElementById('trophyModal').style.display = 'block';
-    });
-    document.getElementById('closeTrophyBtn').addEventListener('click', () => document.getElementById('trophyModal').style.display = 'none');
+// МОДАЛКИУЛОВА
+document.getElementById('takeBtn').addEventListener('click', () => {
+  bag.push({ ...currentFish, caughtWeight: currentWeight });
+  if (!trophies[currentFish.name] || currentWeight > trophies[currentFish.name]) {
+    trophies[currentFish.name] = currentWeight;
+  }
+  addXP(currentFish.xp);
+  document.getElementById('catchModal').style.display = 'none';
+  saveGame(); updateUI();
+});
 
-    // --- ЛОКАЦИИ И МАГАЗИН (С ОТРИСОВКОЙ) ---
-    document.getElementById('openLocBtn').addEventListener('click', () => document.getElementById('locModal').style.display = 'block');
-    document.getElementById('closeLocBtn').addEventListener('click', () => document.getElementById('locModal').style.display = 'none');
-    
-    function renderLocations() {
-        const c = document.getElementById('locContainer'); c.innerHTML = '';
-        locations.forEach((loc, idx) => {
-            const isUnlocked = unlockedLocs.includes(idx);
-            const isCurrent = currentLoc === idx;
-            let btnHtml = '';
-            if (isCurrent) btnHtml = `<button class="buy-btn" disabled style="background:#333;color:#888;">Вы здесь</button>`;
-            else if (isUnlocked) btnHtml = `<button class="buy-btn" onclick="travel(${idx})">Поехать</button>`;
-            else btnHtml = `<button class="buy-btn" onclick="buyLoc(${idx})">Открыть за ${loc.cost} 💰</button>`;
-            
-            c.innerHTML += `<div class="shop-item">
-                <strong>${loc.name}</strong>
-                <span>Требуется уровень: ${loc.reqLvl}</span>
-                ${btnHtml}
-            </div>`;
-        });
-    }
-    window.travel = (idx) => { currentLoc = idx; updateUI(); saveGame(); document.getElementById('locModal').style.display = 'none'; };
-    window.buyLoc = (idx) => {
-        const loc = locations[idx];
-        if (level < loc.reqLvl) return alert(`Нужен ${loc.reqLvl} уровень!`);
-        if (coins < loc.cost) return alert("Недостаточно монет!");
-        coins -= loc.cost; unlockedLocs.push(idx); currentLoc = idx;
-        updateUI(); saveGame(); document.getElementById('locModal').style.display = 'none';
-    };
+document.getElementById('releaseBtn').addEventListener('click', () => {
+  addXP(Math.floor(currentFish.xp / 2));
+  document.getElementById('catchModal').style.display = 'none';
+  saveGame(); updateUI();
+});
 
-    document.getElementById('openShopBtn').addEventListener('click', () => document.getElementById('shopModal').style.display = 'block');
-    document.getElementById('closeShopBtn').addEventListener('click', () => document.getElementById('shopModal').style.display = 'none');
-    
-    function renderShop() {
-        // Удочки
-        const rc = document.getElementById('rodsContainer'); rc.innerHTML = '';
-        rods.forEach((r, idx) => {
-            if (idx === 0) return; // Пропускаем стартовую удочку
-            const isBought = rodLevel >= idx;
-            rc.innerHTML += `<div class="shop-item">
-                <strong>${r.name}</strong>
-                <span>Макс. ожидание: ${r.maxWait/1000} сек | Зеленая зона: ${r.greenTime/1000} сек</span>
-                <button class="buy-btn" ${isBought ? 'disabled style="background:#333;color:#888;"' : ''} onclick="buyRod(${idx}, ${r.cost})">
-                    ${isBought ? 'Куплено' : `Купить за ${r.cost} 💰`}
-                </button>
-            </div>`;
-        });
+document.getElementById('retryBtn').addEventListener('click', () => {
+  document.getElementById('failModal').style.display = 'none';
+});
 
-        // Наживки
-        const bc = document.getElementById('baitsContainer'); bc.innerHTML = '';
-        baits.forEach((b, idx) => {
-            if (idx === 0) return; 
-            const isBought = baitLevel >= idx;
-            bc.innerHTML += `<div class="shop-item">
-                <strong>${b.name}</strong>
-                <span>${b.desc}</span>
-                <button class="buy-btn" ${isBought ? 'disabled style="background:#333;color:#888;"' : ''} onclick="buyBait(${idx}, ${b.cost})">
-                    ${isBought ? 'Куплено' : `Купить за ${b.cost} 💰`}
-                </button>
-            </div>`;
-        });
-    }
-    
-    window.buyRod = (idx, cost) => {
-        if (rodLevel >= idx) return;
-        if (coins < cost) return alert("Недостаточно монет!");
-        if (rodLevel < idx - 1) return alert("Сначала купите предыдущую удочку!");
-        coins -= cost; rodLevel = idx; updateUI(); saveGame();
-    };
-    window.buyBait = (idx, cost) => {
-        if (baitLevel >= idx) return;
-        if (coins < cost) return alert("Недостаточно монет!");
-        if (baitLevel < idx - 1) return alert("Сначала купите предыдущую наживку!");
-        coins -= cost; baitLevel = idx; updateUI(); saveGame();
-    };
+// ИНТЕРФЕЙС КНОПОК МЕНЮ
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('startOverlay').style.display = 'none';
+  loadGame();
+  const audio = document.getElementById('natureSound');
+  audio.play().catch(() => {});
+});
 
-</script>
-</body>
-</html>
+document.getElementById('openBagBtn').addEventListener('click', () => {
+  const list = document.getElementById('bagList');
+  list.innerHTML = bag.length ? '' : 'Садок пуст';
+  bag.forEach(f => {
+    list.innerHTML += `<div class="list-item"><span>${f.name} (${f.caughtWeight} кг)</span><span style="color:#ffd700">${f.price} 💰</span></div>`;
+  });
+  document.getElementById('bagModal').style.display = 'block';
+});
 
+document.getElementById('closeBagBtn').addEventListener('click', () => {
+  document.getElementById('bagModal').style.display = 'none';
+});
+
+document.getElementById('sellAllBtn').addEventListener('click', () => {
+  if (!bag.length) return;
+  const total = bag.reduce((sum, f) => sum + f.price, 0);
+  coins += total; bag = [];
+  updateUI(); saveGame(); document.getElementById('bagModal').style.display = 'none';
+});
+
+document.getElementById('openTrophyBtn').addEventListener('click', () => {
+  const list = document.getElementById('trophyList');
+  list.innerHTML = '';
+  Object.keys(trophies).forEach(name => {
+    list.innerHTML += `<div class="list-item"><span>${name}</span><span style="color:#4caf50">${trophies[name]} кг</span></div>`;
+  });
+  if (!list.innerHTML) list.innerHTML = 'Нет трофеев';
+  document.getElementById('trophyModal').style.display = 'block';
+});
+
+document.getElementById('closeTrophyBtn').addEventListener('click', () => {
+  document.getElementById('trophyModal').style.display = 'none';
+});
+
+// ЛОКАЦИИ И МАГАЗИН
+document.getElementById('openLocBtn').addEventListener('click', () => {
+  document.getElementById('locModal').style.display = 'block';
+});
+document.getElementById('closeLocBtn').addEventListener('click', () => {
+  document.getElementById('locModal').style.display = 'none';
+});
+
+function renderLocations() {
+  const c = document.getElementById('locContainer'); c.innerHTML = '';
+  locations.forEach((loc, idx) => {
+    const isUnlocked = unlockedLocs.includes(idx);
+    const isCurrent = currentLoc === idx;
+    let btnHtml = '';
+    if (isCurrent) btnHtml = `<button class="buy-btn" disabled style="background:#333;color:#888;">Вы здесь</button>`;
+    else if (isUnlocked) btnHtml = `<button class="buy-btn" onclick="travel(${idx})">Поехать</button>`;
+    else btnHtml = `<button class="buy-btn" onclick="buyLoc(${idx})">Открыть за ${loc.cost} 💰</button>`;
+
+    c.innerHTML += `<div class="shop-item"><strong>${loc.name}</strong><span>Требуется уровень: ${loc.reqLvl}</span>${btnHtml}</div>`;
+  });
+}
+
+window.travel = (idx) => {
+  currentLoc = idx; updateUI(); saveGame();
+  document.getElementById('locModal').style.display = 'none';
+  const audio = document.getElementById('natureSound');
+  audio.play().catch(() => {});
+};
+
+window.buyLoc = (idx) => {
+  const loc = locations[idx];
+  if (level < loc.reqLvl) return alert(`Нужен ${loc.reqLvl} уровень!`);
+  if (coins < loc.cost) return alert('Недостаточно монет!');
+  coins -= loc.cost; unlockedLocs.push(idx); currentLoc = idx;
+  updateUI(); saveGame(); document.getElementById('locModal').style.display = 'none';
+};
+
+document.getElementById('openShopBtn').addEventListener('click', () => {
+  document.getElementById('shopModal').style.display = 'block';
+});
+document.getElementById('closeShopBtn').addEventListener('click', () => {
+  document.getElementById('shopModal').style.display = 'none';
+});
+
+function renderShop() {
+  const rc = document.getElementById('rodsContainer'); rc.innerHTML = '';
+  rods.forEach((r, idx) => {
+    if (idx === 0) return;
+    const isBought = rodLevel >= idx;
+    rc.innerHTML += `<div class="shop-item"><strong>${r.name}</strong><span>Макс. ожидание: ${r.maxWait/1000} сек | Зеленая зона: ${r.greenTime/1000} сек</span><button class="buy-btn ${isBought ? 'disabled' : ''}" ${isBought ? 'disabled style="background:#333;color:#888;"' : ''} onclick="buyRod(${idx}, ${r.cost})">${isBought ? 'Куплено' : `Купить за ${r.cost} 💰`}</button></div>`;
+  });
+
+  const bc = document.getElementById('baitsContainer'); bc.innerHTML = '';
+  baits.forEach((b, idx) => {
+    if (idx === 0) return;
+    const isBought = baitLevel >= idx;
+    bc.innerHTML += `<div class="shop-item"><strong>${b.name}</strong><span>${b.desc}</span><button class="buy-btn ${isBought ? 'disabled' : ''}" ${isBought ? 'disabled style="background:#333;color:#888;"' : ''} onclick="buyBait(${idx}, ${b.cost})">${isBought ? 'Куплено' : `Купить за ${b.cost} 💰`}</button></div>`;
+  });
+}
+
+window.buyRod = (idx, cost) => {
+  if (rodLevel >= idx) return;
+  if (coins < cost) return alert('Недостаточно монет!');
+  if (rodLevel < idx - 1) return alert('Сначала купите предыдущую удочку!');
+  coins -= cost; rodLevel = idx; updateUI(); saveGame();
+};
+
+window.buyBait = (idx, cost) => {
+  if (baitLevel >= idx) return;
+  if (coins < cost) return alert('Недостаточно монет!');
+  if (baitLevel < idx - 1) return alert('Сначала купите предыдущую наживку!');
+  coins -= cost; baitLevel = idx; updateUI(); saveGame();
+};
+      
